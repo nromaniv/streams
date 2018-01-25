@@ -10,6 +10,7 @@ public class AsIntStream implements IntStream {
 
     private Iterator<Integer> iterator;
     private AsIntStream previous;
+    private int size;
 
     // Constructor for the underlying stream
     private AsIntStream(int[] values) {
@@ -26,6 +27,7 @@ public class AsIntStream implements IntStream {
                 return values[++position];
             }
         };
+        size = values.length;
     }
 
     // Constructor for intermediary streams
@@ -55,27 +57,36 @@ public class AsIntStream implements IntStream {
 
     @Override
     public Double average() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int i = 0;
+        int sum = 0;
+        while (iterator.hasNext()) {
+            i++;
+            sum += iterator.next();
+        }
+        return (double) sum / i;
     }
 
     @Override
     public Integer max() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return reduce(Integer.MIN_VALUE, (a, b) -> a > b ? a : b);
     }
 
     @Override
     public Integer min() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return reduce(Integer.MAX_VALUE, (a, b) -> a < b ? a : b);
     }
 
     @Override
     public long count() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int i = 0;
+        while (iterator.hasNext())
+            i++;
+        return i;
     }
 
     @Override
     public Integer sum() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return reduce(0, (a, b) -> a + b);
     }
 
     @Override
@@ -95,7 +106,8 @@ public class AsIntStream implements IntStream {
 
     @Override
     public void forEach(IntConsumer action) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        while (iterator.hasNext())
+            action.accept(iterator.next());
     }
 
     @Override
@@ -133,11 +145,17 @@ public class AsIntStream implements IntStream {
 
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        while (iterator.hasNext()) {
+            identity = op.apply(identity, iterator.next());
+        }
+        return identity;
     }
 
     @Override
     public int[] toArray() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int[] result = new int[size];
+        for (int i = 0; iterator.hasNext(); i++)
+            result[i] = iterator.next();
+        return result;
     }
 }
