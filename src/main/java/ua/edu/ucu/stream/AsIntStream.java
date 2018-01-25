@@ -44,6 +44,11 @@ public class AsIntStream implements IntStream {
         this.previous = previous;
     }
 
+    private AsIntStream(AsIntStream previous, Iterator<Integer> iterator) {
+        this.iterator = iterator;
+        this.previous = previous;
+    }
+
     public static IntStream of(int... values) {
         return new AsIntStream(values);
     }
@@ -101,8 +106,17 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
-        return new AsIntStream(this,
-                () -> null);
+        return new AsIntStream(this, new Iterator<Integer>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public Integer next() {
+                return null;
+            }
+        });
     }
 
     @Override
