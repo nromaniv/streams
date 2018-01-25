@@ -14,16 +14,16 @@ public class AsIntStream implements IntStream {
     // Constructor for the underlying stream
     private AsIntStream(int[] values) {
         iterator = new Iterator<Integer>() {
-            private int position = 0;
+            private int position = -1;
 
             @Override
             public boolean hasNext() {
-                return position < values.length;
+                return position < values.length - 1;
             }
 
             @Override
             public Integer next() {
-                return values[position++];
+                return values[++position];
             }
         };
     }
@@ -107,14 +107,26 @@ public class AsIntStream implements IntStream {
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
         return new AsIntStream(this, new Iterator<Integer>() {
+            AsIntStream stream = previous.iterator.hasNext() ?
+                    (AsIntStream) func.applyAsIntStream(previous.iterator.next()) :
+                    null;
             @Override
             public boolean hasNext() {
-                return false;
+                return (!(stream == null) && stream.iterator.hasNext());
             }
 
             @Override
             public Integer next() {
-                return null;
+                if (stream.iterator.hasNext())
+                    return stream.iterator.next();
+                else
+                    stream = previous.iterator.hasNext() ?
+                            (AsIntStream) func.applyAsIntStream(previous.iterator.next()) :
+                            null;
+                if (stream == null)
+                    throw new NoSuchElementException();
+                else
+                    return next();
             }
         });
     }
