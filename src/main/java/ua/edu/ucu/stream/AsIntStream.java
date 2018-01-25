@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 public class AsIntStream implements IntStream {
 
     private Iterator<Integer> iterator;
-    private AsIntStream previous;
     private int size;
 
     // Constructor for the underlying stream
@@ -32,7 +31,6 @@ public class AsIntStream implements IntStream {
 
     // Constructor for intermediary streams
     private AsIntStream(AsIntStream previous, Supplier<Integer> supplier) {
-        this.previous = previous;
         this.iterator = new Iterator<Integer>() {
             @Override
             public boolean hasNext() {
@@ -46,9 +44,9 @@ public class AsIntStream implements IntStream {
         };
     }
 
-    private AsIntStream(AsIntStream previous, Iterator<Integer> iterator) {
+    // Special constructor for flatMap
+    private AsIntStream(Iterator<Integer> iterator) {
         this.iterator = iterator;
-        this.previous = previous;
     }
 
     public static IntStream of(int... values) {
@@ -118,7 +116,7 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
-        return new AsIntStream(this, new Iterator<Integer>() {
+        return new AsIntStream(new Iterator<Integer>() {
             AsIntStream stream = getStream();
 
             @Override
