@@ -29,17 +29,8 @@ public class AsIntStream implements IntStream {
     }
 
     // Constructor for intermediary streams
-    private AsIntStream(AsIntStream previous, Iterator<Integer> iterator) {
-        this.iterator = iterator;
-        this.previous = previous;
-    }
-
-    public static IntStream of(int... values) {
-        return new AsIntStream(values);
-    }
-
-    private IntStream newIntermediateOperation(Supplier<Integer> supplier) {
-        Iterator<Integer> iterator = new Iterator<Integer>() {
+    private AsIntStream(AsIntStream previous, Supplier<Integer> supplier) {
+        this.iterator = new Iterator<Integer>() {
             @Override
             public boolean hasNext() {
                 return previous.iterator.hasNext();
@@ -50,7 +41,11 @@ public class AsIntStream implements IntStream {
                 return supplier.get();
             }
         };
-        return new AsIntStream(this, iterator);
+        this.previous = previous;
+    }
+
+    public static IntStream of(int... values) {
+        return new AsIntStream(values);
     }
 
     @Override
@@ -80,7 +75,7 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        return newIntermediateOperation(
+        return new AsIntStream(this,
                 () -> {
                     int value;
                     while (true)
@@ -100,13 +95,13 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        return newIntermediateOperation(
+        return new AsIntStream(this,
                 () -> mapper.apply(previous.iterator.next()));
     }
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
-        return newIntermediateOperation(
+        return new AsIntStream(this,
                 () -> null);
     }
 
