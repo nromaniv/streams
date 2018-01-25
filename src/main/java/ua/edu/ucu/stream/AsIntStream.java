@@ -32,6 +32,7 @@ public class AsIntStream implements IntStream {
 
     // Constructor for intermediary streams
     private AsIntStream(AsIntStream previous, Supplier<Integer> supplier) {
+        this.previous = previous;
         this.iterator = new Iterator<Integer>() {
             @Override
             public boolean hasNext() {
@@ -43,7 +44,6 @@ public class AsIntStream implements IntStream {
                 return supplier.get();
             }
         };
-        this.previous = previous;
     }
 
     private AsIntStream(AsIntStream previous, Iterator<Integer> iterator) {
@@ -95,8 +95,8 @@ public class AsIntStream implements IntStream {
                 () -> {
                     int value;
                     while (true)
-                        if (previous.iterator.hasNext()) {
-                            if (predicate.test(value = previous.iterator.next()))
+                        if (iterator.hasNext()) {
+                            if (predicate.test(value = iterator.next()))
                                 return value;
                         } else {
                             throw new NoSuchElementException();
@@ -113,32 +113,37 @@ public class AsIntStream implements IntStream {
     @Override
     public IntStream map(IntUnaryOperator mapper) {
         return new AsIntStream(this,
-                () -> mapper.apply(previous.iterator.next()));
+                () -> mapper.apply(iterator.next()));
     }
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
         return new AsIntStream(this, new Iterator<Integer>() {
-            AsIntStream stream = previous.iterator.hasNext() ?
-                    (AsIntStream) func.applyAsIntStream(previous.iterator.next()) :
-                    null;
+            AsIntStream stream = getStream();
+
             @Override
             public boolean hasNext() {
-                return (!(stream == null) && stream.iterator.hasNext());
+                return (iterator.hasNext() || stream.iterator.hasNext());
             }
 
             @Override
             public Integer next() {
-                if (stream.iterator.hasNext())
+                if (stream.iterator.hasNext()) {
                     return stream.iterator.next();
-                else
-                    stream = previous.iterator.hasNext() ?
-                            (AsIntStream) func.applyAsIntStream(previous.iterator.next()) :
-                            null;
-                if (stream == null)
+                } else {
+                    stream = getStream();
+                }
+                if (stream == null) {
                     throw new NoSuchElementException();
-                else
+                } else {
                     return next();
+                }
+            }
+
+            private AsIntStream getStream() {
+                return iterator.hasNext() ?
+                        (AsIntStream) func.applyAsIntStream(iterator.next()) :
+                        null;
             }
         });
     }
